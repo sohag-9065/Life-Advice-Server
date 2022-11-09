@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -24,9 +24,43 @@ async function run() {
         const Review = client.db('life_advice').collection('reviews');
 
         app.get('/services', async (req, res) => {
-            const services = await Service.find().toArray();
-            res.send(services);
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            // console.log(page, size)
+            const query = {}
+            const cursor = Service.find(query);
+            const services = await cursor.skip(page * size).limit(size).toArray();
+            const count = await Service.estimatedDocumentCount();
+            res.send({ count, services });
         })
+
+
+        app.post('/services', async (req, res) => {
+            const course = req.body;
+            const result = await Service.insertOne(course);
+            res.send(result);
+        });
+
+
+        app.get('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+           
+            const service = await Service.findOne(query);
+            res.send(service);
+        });
+
+
+        
+
+
+
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            const result = await Review.insertOne(review);
+            res.send(result);
+        });
+        
 
         // const options = { ordered: true };
         // const result = await Service.insertMany(data, options);
