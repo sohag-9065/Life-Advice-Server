@@ -51,7 +51,21 @@ async function run() {
         });
 
 
-        
+        app.get('/reviews/filter', async (req, res) => {
+            
+            const id = req.query.id;
+            const email = req.query.email;
+            let query;
+            if(id){
+                query = { course_Id:  id };
+            }else{
+                query = { email: email };
+            }
+           
+            const reviews = await Review.find(query).toArray();
+            // console.log(reviews)
+            res.send(reviews);
+        });
 
 
 
