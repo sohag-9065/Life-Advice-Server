@@ -74,6 +74,15 @@ async function run() {
             const result = await Review.insertOne(review);
             res.send(result);
         });
+
+
+        app.delete('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await Review.deleteOne(query);
+            console.log(result);
+            res.send(result);
+        })
         
 
         // const options = { ordered: true };
