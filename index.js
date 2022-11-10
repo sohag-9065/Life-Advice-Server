@@ -38,7 +38,6 @@ function verifyJWT(req, res, next) {
 
 async function run() {
     try {
-        await client.connect();
         // create database collection 
         const Service = client.db('life_advice').collection('services');
         const Review = client.db('life_advice').collection('reviews');
