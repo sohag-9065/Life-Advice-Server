@@ -23,17 +23,24 @@ async function run() {
         const Service = client.db('life_advice').collection('services');
         const Review = client.db('life_advice').collection('reviews');
 
+        // app.get('/services', async (req, res) => {
+            
+        //     const query = {}
+        //     const cursor = Service.find(query).sort({postTime: -1});
+        //     const services = await cursor.toArray();
+        //     res.send( services );
+        // })
+
         app.get('/services', async (req, res) => {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
             // console.log(page, size)
             const query = {}
-            const cursor = Service.find(query);
+            const cursor = Service.find(query).sort({postTime: -1});
             const services = await cursor.skip(page * size).limit(size).toArray();
             const count = await Service.estimatedDocumentCount();
             res.send({ count, services });
         })
-
 
         app.post('/services', async (req, res) => {
             const course = req.body;
@@ -41,11 +48,9 @@ async function run() {
             res.send(result);
         });
 
-
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
-           
             const service = await Service.findOne(query);
             res.send(service);
         });
@@ -62,7 +67,7 @@ async function run() {
                 query = { email: email };
             }
            
-            const reviews = await Review.find(query).toArray();
+            const reviews = await Review.find(query).sort({postTime: -1}).toArray();
             // console.log(reviews)
             res.send(reviews);
         });
@@ -99,10 +104,8 @@ async function run() {
             res.send(result);
         })
         
-
         // const options = { ordered: true };
         // const result = await Service.insertMany(data, options);
-
 
         console.log("DB connect")
 
