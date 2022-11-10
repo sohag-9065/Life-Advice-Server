@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -17,11 +18,37 @@ const data = require('./data/data.json');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.akdywg4.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    console.log("first")
+
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' });
+    }
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 async function run() {
     try {
         await client.connect();
         const Service = client.db('life_advice').collection('services');
         const Review = client.db('life_advice').collection('reviews');
+
+        // create toekn 
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
+            res.send({ token })
+        });
 
         // app.get('/services', async (req, res) => {
             
@@ -42,7 +69,7 @@ async function run() {
             res.send({ count, services });
         })
 
-        app.post('/services', async (req, res) => {
+        app.post('/services', verifyJWT, async (req, res) => {
             const course = req.body;
             const result = await Service.insertOne(course);
             res.send(result);
@@ -74,13 +101,13 @@ async function run() {
 
 
 
-        app.post('/reviews', async (req, res) => {
+        app.post('/reviews', verifyJWT, async (req, res) => {
             const review = req.body;
             const result = await Review.insertOne(review);
             res.send(result);
         });
 
-        app.patch('/reviews/:id', async (req, res) => {
+        app.patch('/reviews/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const review = req.body
             // console.log(review);
@@ -96,7 +123,7 @@ async function run() {
         })
 
 
-        app.delete('/reviews/:id', async (req, res) => {
+        app.delete('/reviews/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await Review.deleteOne(query);
