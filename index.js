@@ -14,15 +14,14 @@ app.use(express.json());
 const data = require('./data/data.json');
 // console.log(data)
 
-
+// mongoDB connet uri 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.akdywg4.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
+// authorization check unction 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
-    console.log("first")
-
+    // console.log("first")
     if (!authHeader) {
         return res.status(401).send({ message: 'unauthorized access' });
     }
@@ -40,6 +39,7 @@ function verifyJWT(req, res, next) {
 async function run() {
     try {
         await client.connect();
+        // create database collection 
         const Service = client.db('life_advice').collection('services');
         const Review = client.db('life_advice').collection('reviews');
 
@@ -51,13 +51,13 @@ async function run() {
         });
 
         // app.get('/services', async (req, res) => {
-            
         //     const query = {}
         //     const cursor = Service.find(query).sort({postTime: -1});
         //     const services = await cursor.toArray();
         //     res.send( services );
         // })
 
+        // get services/courses depends on page & size 
         app.get('/services', async (req, res) => {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
@@ -69,12 +69,14 @@ async function run() {
             res.send({ count, services });
         })
 
+        // add  services/courses 
         app.post('/services', verifyJWT, async (req, res) => {
             const course = req.body;
             const result = await Service.insertOne(course);
             res.send(result);
         });
 
+        // get single  service/course  by service ID
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -82,9 +84,8 @@ async function run() {
             res.send(service);
         });
 
-
+        // get reviews    by service ID or User all reviews
         app.get('/reviews/filter', async (req, res) => {
-            
             const id = req.query.id;
             const email = req.query.email;
             let query;
@@ -93,20 +94,19 @@ async function run() {
             }else{
                 query = { email: email };
             }
-           
             const reviews = await Review.find(query).sort({postTime: -1}).toArray();
             // console.log(reviews)
             res.send(reviews);
         });
 
-
-
+        // add review 
         app.post('/reviews', verifyJWT, async (req, res) => {
             const review = req.body;
             const result = await Review.insertOne(review);
             res.send(result);
         });
 
+        // update review 
         app.patch('/reviews/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const review = req.body
@@ -122,7 +122,7 @@ async function run() {
             // res.send({ count });
         })
 
-
+        // delete review 
         app.delete('/reviews/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -135,7 +135,6 @@ async function run() {
         // const result = await Service.insertMany(data, options);
 
         console.log("DB connect")
-
     }
     finally {
 
